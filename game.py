@@ -1,7 +1,7 @@
 import random
 
 class Character:
-    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult):
+    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult, arma):
         self.__nome = nome
         self.__classe = classe
         self.__vida = vida
@@ -12,6 +12,7 @@ class Character:
         self.__defesaMax = defesaMax
         self.__escudo = escudo
         self.__ult = ult
+        self.__arma = arma
 
     @property
     def nome(self):
@@ -93,8 +94,16 @@ class Character:
     def ult(self, value):
         self.__ult = value
 
-    def atacar(self):
-        return random.randint(self.__ataqueMin, self.__ataqueMax)
+    @property
+    def arma(self):
+        return self.__arma
+    
+    @arma.setter
+    def arma(self, value):
+        self.__arma = value
+
+    def atacar(self, arma):
+        return random.randint(self.__ataqueMin, self.__ataqueMax) + arma.danoExtra
         #return f"{self.__nome} ataca, causando {self.__dano} de dano!"
 
     def defender(self):
@@ -109,54 +118,112 @@ class Character:
         return "O personagem usou seu ataque especial"
 
 class Warrior(Character):
-    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult):
-        super().__init__(nome, "Guerreiro", vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult)
+    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult, arma):
+        super().__init__(nome, "Guerreiro", vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult, arma)
 
-    def ultar(self):
-        self.ataqueMin(self.__ataqueMax)
-        self.atacar(self.__ataqueMin, self.__ataqueMax)
+    def ultar(self, arma):
+        ataqueMin = self.ataqueMax
+        return self.atacar(arma)
 
 class Mage(Character):
-    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult):
-        super().__init__(nome, "Mago", vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult)
+    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult, arma):
+        super().__init__(nome, "Mago", vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult, arma)
 
-    def ultar(self, enemy):
-        enemy.escudo(0)
-        self.atacar(self.__ataqueMin, self.__ataqueMax)
+    def ultar(self, enemy, arma):
+        escudo = 0
+        return self.atacar(arma)
 
 class Archer(Character):
-    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult):
-        super().__init__(nome, "Arqueiro", vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult)
+    def __init__(self, nome, classe, vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult, arma):
+        super().__init__(nome, "Arqueiro", vida, ataqueMin, ataqueMax, defesaMin, defesaMax, dano, escudo, ult, arma)
 
-    def ultar(self, enemy):
+    def ultar(self, enemy, arma):
         enemy.escudo(enemy.escudo() / 2)
         self.ataqueMin(self.ataqueMin() * 2)
-        self.atacar(self.__ataqueMin, self.__ataqueMax)
+        return self.atacar(arma)
 
-meuPersonagem = Warrior("Diana", "Guerreiro", 100, 40, 50, 5, 15, 0, 0, "Colapso Minguante")
-inimigo = Mage("Cassiopeia", "Mago", 100, 30, 60, 5, 15, 0, 30, "Olhar Petrificador")
+class Weapon:
+    def __init__(self, nome, danoExtra):
+        self.__nome = nome
+        self.__danoExtra = danoExtra
+
+    @property
+    def nome(self):
+        return self.__nome
+        
+    @nome.setter
+    def nome(self, value):
+        self.__nome = value
+        
+    @property
+    def danoExtra(self):
+        return self.__danoExtra
+        
+    @danoExtra.setter
+    def danoExtra(self, value):
+        self.__danoExtra = value
+
+arma1 = Weapon("Lâmina Lunar Crescente", 20)
+arma2 = Weapon("Gadanho da Lua Nova", 10)
+arma3 = Weapon("Cetro da Serpente Venenosa", 5)
+arma4 = Weapon("Orbe da Medusa", 15)
+meuPersonagem = Warrior("Diana", "Guerreiro", 200, 40, 50, 5, 15, 0, 0, "Colapso Minguante", arma2)
+inimigo = Mage("Cassiopeia", "Mago", 200, 40, 50, 5, 15, 0, 0, "Olhar Petrificador", arma4)
+
 
 while ((meuPersonagem.vida > 0) & (inimigo.vida > 0)):
-    dano = meuPersonagem.atacar()
+    dano = meuPersonagem.atacar(meuPersonagem.arma)
     print(f"{meuPersonagem.nome} ataca, causando {dano} de dano!")
     escudo = inimigo.defender()
     print(f"{inimigo.nome} defende, criando um escudo de {escudo}!")
     if(escudo > dano):
         escudo = dano
-    inimigo.vida = inimigo.vida - dano + escudo
+    inimigo.vida = (inimigo.vida + escudo) - dano
 
     if (inimigo.estaVivo()):
         print(f"{inimigo.nome} sobreviveu, com {inimigo.vida}pts de vida!\n")
+    else:
+        print(f"{inimigo.nome} morreu.\n")
+        break
 
-    dano = inimigo.atacar()
+    dano = inimigo.atacar(inimigo.arma)
     print(f"{inimigo.nome} ataca, causando {dano} de dano!")
-    escudo = inimigo.defender()
+    escudo = meuPersonagem.defender()
     print(f"{meuPersonagem.nome} defende, criando um escudo de  {escudo}!")
     if(escudo > dano):
         escudo = dano
-    meuPersonagem.vida = meuPersonagem.vida - dano + escudo
-
-    
+    meuPersonagem.vida = (meuPersonagem.vida + escudo) - dano 
 
     if (meuPersonagem.estaVivo()):
         print(f"{meuPersonagem.nome} sobreviveu, com {meuPersonagem.vida}pts de vida!\n")
+    else:
+        print(f"{meuPersonagem.nome} morreu.\n")
+        break
+
+    escudo = inimigo.defender()
+    print(f"{inimigo.nome} defende, criando um escudo de {escudo}!")
+    ultimate = meuPersonagem.ultar(meuPersonagem.arma)
+    print(f"{meuPersonagem.nome} ulta, causando {ultimate} de dano!")
+    if(escudo > ultimate):
+        escudo = ultimate
+    inimigo.vida = (inimigo.vida + escudo) - ultimate 
+
+    if (inimigo.estaVivo()):
+        print(f"{inimigo.nome} sobreviveu, com {inimigo.vida}pts de vida!\n")
+    else:
+        print(f"{inimigo.nome} morreu.\n")
+        break
+
+    escudo = meuPersonagem.defender()
+    print(f"{meuPersonagem.nome} defende, criando um escudo de {escudo}!")
+    ultimate = inimigo.ultar(meuPersonagem, inimigo.arma)
+    print(f"{inimigo.nome} ulta, causando {ultimate} de dano!")
+    if(escudo > ultimate):
+        escudo = ultimate
+    meuPersonagem.vida = (meuPersonagem.vida + escudo) - ultimate
+
+    if (meuPersonagem.estaVivo()):
+        print(f"{meuPersonagem.nome} sobreviveu, com {meuPersonagem.vida}pts de vida!\n")
+    else:
+        print(f"{meuPersonagem.nome} morreu.\n")
+        break
